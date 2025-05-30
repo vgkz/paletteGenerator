@@ -40,8 +40,14 @@ instance Semigroup RGB where
 instance Monoid RGB where
  mempty = RGB 0 0 0
 
+-- defining uniform random sampling of rgb colors
+instance UniformRange RGB where
+ uniformRM ((RGB r1 g1 b1), (RGB r2 g2 b2)) g = RGB <$> uniformRM (r1,r2) g <*> uniformRM (g1,g2) g <*> uniformRM (b1,b2) g
+
+-- defining random sampling over a range
 instance Uniform RGB where
  uniformM g = RGB <$> uniformRM (0,1) g <*> uniformRM (0,1) g <*> uniformRM (0,1) g
+ 
 
 -- Euclidean distance
 euclideanDistance :: RGB -> RGB -> Double
@@ -87,9 +93,23 @@ kMeans ks xs = let kmean_iter = kMeansIter ks xs
 sampleRGB :: (StatefulGen g m) => g -> m RGB
 sampleRGB = uniformM 
 
+
+sampleMonochromatic :: (StatefulGen g m) => String -> g -> m RGB
+sampleMonochromatic chroma g = do
+                                 val1 <- uniformRM (0.1, 1) g
+                                 val2 <- uniformRM (0, val1) g
+                                 return $ case chroma of
+                                          "Red" -> RGB val1 val2 val2
+                                          "Green" -> RGB val2 val1 val2
+                                          "Blue" -> RGB val2 val2 val1
+                                          "Yellow" -> RGB val1 val1 val2
+                                          "Magenta" -> RGB val1 val2 val1
+                                          "Cyan" -> RGB val2 val1 val1
+                                          _ -> RGB 0 0 0
+
 -- generate n random RGB colors
-samplenRGB :: StatefulGen a m => Int -> a -> m [RGB]
-samplenRGB n = replicateM n . sampleRGB 
+samplenRGB :: StatefulGen a m => Int -> (a -> m RGB) -> a -> m [RGB]
+samplenRGB n sampler = replicateM n . sampler
 
 mainfunc :: IO ()
 mainfunc = do
@@ -100,9 +120,11 @@ mainfunc = do
             putStrLn "How many colors would you like?: "
             inp2 <- getLine
             let user_k = read inp2
-            let randomColors = runStateGen_ randomGenerator (samplenRGB 1000)
-            let initKmeans = runStateGen_ randomGenerator (samplenRGB user_k) 
+            let randomColors = runStateGen_ randomGenerator (samplenRGB 1000 sampleRGB)
+            let initKmeans = runStateGen_ randomGenerator (samplenRGB user_k sampleRGB) 
             let out = kMeans initKmeans randomColors
             let newMeans = Prelude.map fst out
             putStrLn "generated palette: "
             print newMeans
+            let sampledRed = runStateGen_ randomGenerator (samplenRGB 1 (sampleMonochromatic "Red"))
+            print sampledRed
