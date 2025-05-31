@@ -1,7 +1,9 @@
 module Lib
 (
- mainfunc
+ kMeans,
+ samplenRGB
  ) where
+
 import System.Random.Stateful
 import Control.Monad (replicateM)
 import Control.Foldl as Foldl 
@@ -107,24 +109,5 @@ sampleMonochromatic chroma g = do
                                           "Cyan" -> RGB val2 val1 val1
                                           _ -> RGB 0 0 0
 
--- generate n random RGB colors
-samplenRGB :: StatefulGen a m => Int -> (a -> m RGB) -> a -> m [RGB]
-samplenRGB n sampler = replicateM n . sampler
-
-mainfunc :: IO ()
-mainfunc = do
-            putStrLn "Provide an integer seed: "
-            inp <- getLine
-            let seed = read inp
-            let randomGenerator = mkStdGen seed
-            putStrLn "How many colors would you like?: "
-            inp2 <- getLine
-            let user_k = read inp2
-            let randomColors = runStateGen_ randomGenerator (samplenRGB 1000 sampleRGB)
-            let initKmeans = runStateGen_ randomGenerator (samplenRGB user_k sampleRGB) 
-            let out = kMeans initKmeans randomColors
-            let newMeans = Prelude.map fst out
-            putStrLn "generated palette: "
-            print newMeans
-            let sampledRed = runStateGen_ randomGenerator (samplenRGB 1 (sampleMonochromatic "Red"))
-            print sampledRed
+samplenRGB :: StatefulGen a m => Int -> a -> m [RGB]
+samplenRGB n = replicateM n . sampleRGB 
