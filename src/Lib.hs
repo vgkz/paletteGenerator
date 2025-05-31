@@ -6,6 +6,7 @@ module Lib
  samplenRGB
  ) where
 
+-- import required modules
 import System.Random.Stateful
 import Control.Monad (replicateM)
 import Control.Foldl as Foldl 
@@ -22,6 +23,7 @@ instance Show RGB where
  show (RGB r g b) = let display = show . round . (*255) in
                    "RGB " ++ display r ++ " " ++ display g ++ " " ++ display b 
 
+-- implement toDouble function used to define instance of Num
 integerToDouble :: Integer -> Double
 integerToDouble = fromInteger
 
@@ -58,14 +60,16 @@ euclideanDistance :: RGB -> RGB -> Double
 euclideanDistance x1 x2 = let (RGB r g b) = (x1 - x2)^2 in
                           sqrt (r+g+b)
 
--- mean
+-- mean, used to compute centroids in kmeans algorithm
 rgbMean :: [RGB] -> RGB
 rgbMean = Foldl.fold Foldl.mean 
 
 -- assign x to nearest kmean
 assignCluster :: [RGB] -> RGB -> Maybe Int
 assignCluster kmeans x = let distances = Prelude.map (euclideanDistance x) kmeans 
+                             -- assign to closest centroid
                              m = Prelude.minimum distances in
+                         -- get index of centroid
                          getIndex m distances 0
                          where getIndex :: Eq a => a -> [a] -> Int -> Maybe Int
                                getIndex _ [] _ = Nothing
@@ -76,6 +80,7 @@ assignCluster kmeans x = let distances = Prelude.map (euclideanDistance x) kmean
 -- compute an iteration of the naive kmeans algorithm
 kMeansIter :: [RGB] -> [RGB] -> [(RGB, [RGB])]
 kMeansIter ks xs = let out = Prelude.map (assigner ks) xs in
+                   -- return a list of each centroid and the colors assigned to that centroid
                    Prelude.map (listConstructor out ks) (unique $ Prelude.map snd out)
                    where assigner :: [RGB] -> RGB -> (RGB, Int)
                          assigner kmeans x = case assignCluster kmeans x of
@@ -97,6 +102,7 @@ kMeans ks xs = let kmean_iter = kMeansIter ks xs
 sampleRGB :: (StatefulGen g m) => g -> m RGB
 sampleRGB = uniformM 
 
+-- monochromatic random sampling of prespecified hues
 sampleMonochromatic :: (StatefulGen g m) => String -> g -> m RGB
 sampleMonochromatic hue g = do
                                  val1 <- uniformRM (0.1, 1) g
@@ -110,5 +116,6 @@ sampleMonochromatic hue g = do
                                           "Cyan" -> RGB val2 val1 val1
                                           "Grey" -> RGB val1 val1 val1
 
+-- randomly sample n colors using a given RGB sampler
 samplenRGB :: StatefulGen a m => Int -> (a -> m RGB) -> a -> m [RGB]
 samplenRGB n sampler = replicateM n . sampler 
