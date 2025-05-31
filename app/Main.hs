@@ -7,8 +7,17 @@ import Lib
 data Options = Options {
     ncolors :: Int,
     monochromatic :: Bool,
-    monoHue :: String
+    monoHue :: String,
+    seed :: Maybe Int
     }
+
+
+monoHueReader :: ReadM String
+monoHueReader = eitherReader $ \arg -> do
+                                        if elem arg validHues 
+                                        then return arg
+                                        else Left $ "Invalid monochromatic hue, valid hues are: " ++ show validHues
+                where validHues = ["Red", "Green", "Blue", "Yellow", "Magenta", "Cyan", "Grey"]
 
 options :: Parser Options
 options = Options
@@ -18,23 +27,27 @@ options = Options
     <*> switch
         (long "monochromatic"
         <> help "Should a monochromatic palette be generated?")
-    <*> strOption
+    <*> option monoHueReader 
         (long "monoHue"
         <> help "Which monochromatic palette should be generated? (defaults to Red)"
-        <> value "Red")
+        <> value "Grey")
+    <*> optional (option auto
+        (long "seed"
+        <> help "Set a seed for random palette generation"))
 
 optsToIO :: Options -> IO ()
-optsToIO (Options n b s) = do
-                            let seed = 2
-                            let randomGenerator = mkStdGen seed
-                            let randomColors = runStateGen_ randomGenerator (samplenRGB 1000)
-                            let initKmeans = runStateGen_ randomGenerator (samplenRGB n)
-                            let out = kMeans initKmeans randomColors
-                            let newMeans = Prelude.map fst out
-                            putStrLn "Generated palette: "
-                            print newMeans
-                            print s
-                            print b
+optsToIO (Options n b s usrSeed) = let sampler = if b then sampleMonochromatic s else sampleRGB in
+                                do
+                                 -- generate without seed if no seed is provided
+                                 randomGenerator <- case usrSeed of
+                                                     Just x -> return $ mkStdGen x
+                                                     Nothing -> getStdGen
+                                 let randomColors = runStateGen_ randomGenerator (samplenRGB 1000 sampler)
+                                 let initKmeans = runStateGen_ randomGenerator (samplenRGB n sampler)
+                                 let out = kMeans initKmeans randomColors
+                                 let newMeans = Prelude.map fst out
+                                 putStrLn "Generated palette: "
+                                 print newMeans
 
 main :: IO ()
 main = optsToIO =<< execParser opts
