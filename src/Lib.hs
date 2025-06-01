@@ -20,12 +20,14 @@ data RGB = RGB Component Component Component
 
 -- Implementing show instance to print RGB on more common 0-255 scale
 instance Show RGB where
- show (RGB r g b) = let display = show . round . (*255) in
-                   "RGB " ++ display r ++ " " ++ display g ++ " " ++ display b 
+ show (RGB r g b) = let display = show . round . (*255) 
+                        colorcode = "\ESC[38;2;" ++ display r ++ ";" ++ display g ++ ";" ++ display b ++ "m" in -- format "\Esc[38;2;r;g;bm"
+                    colorcode ++ "RGB " ++ "\ESC[0m" ++ display r ++ " " ++ display g ++ " " ++ display b 
 
 -- implement toDouble function used to define instance of Num
 integerToDouble :: Integer -> Double
 integerToDouble = fromInteger
+
 
 -- Implementing RGB as an instance of Num
 instance Num RGB where

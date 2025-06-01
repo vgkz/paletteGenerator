@@ -2,6 +2,7 @@ module Main (main) where
 
 import Options.Applicative
 import System.Random.Stateful
+import Data.List
 import Lib
 
 -- type for command line arguments
@@ -52,7 +53,7 @@ optsToIO (Options n b s usrSeed) = let sampler = if b then sampleMonochromatic s
                                  let newMeans = Prelude.map fst out
                                  -- print generated palette as output
                                  putStrLn "Generated palette: "
-                                 print newMeans
+                                 print $ sort newMeans
 
 -- parse options and pass to optsToIO
 main :: IO ()
