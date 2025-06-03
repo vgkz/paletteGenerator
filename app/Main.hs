@@ -2,6 +2,7 @@ module Main (main) where
 
 import Options.Applicative
 import System.Random.Stateful
+import Data.List
 import Lib
 
 -- type for command line arguments
@@ -15,7 +16,7 @@ data Options = Options {
 -- Reads monoHue option and throws error if unimplemented hue is provided
 monoHueReader :: ReadM String
 monoHueReader = eitherReader $ \arg -> do
-                                        if elem arg validHues 
+                                        if arg `elem` validHues 
                                         then return arg
                                         else Left $ "Invalid monochromatic hue, valid hues are: " ++ show validHues
                 where validHues = ["Red", "Green", "Blue", "Yellow", "Magenta", "Cyan", "Grey"]
@@ -49,10 +50,12 @@ optsToIO (Options n b s usrSeed) = let sampler = if b then sampleMonochromatic s
                                  let randomColors = runStateGen_ randomGenerator (samplenRGB 1000 sampler)
                                  let initKmeans = runStateGen_ randomGenerator (samplenRGB n sampler)
                                  let out = kMeans initKmeans randomColors
-                                 let newMeans = Prelude.map fst out
+                                 let newPalette = Prelude.map fst out
+                                 -- sort palette by luminosity if monochrome, else hue, chroma luminosity
+                                 let sortedPalette = if b then sortBy sortMonochrome newPalette else sortBy sortRGB newPalette
                                  -- print generated palette as output
                                  putStrLn "Generated palette: "
-                                 print newMeans
+                                 print sortedPalette 
 
 -- parse options and pass to optsToIO
 main :: IO ()
