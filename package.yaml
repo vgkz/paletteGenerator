@@ -24,6 +24,8 @@ dependencies:
 - random
 - foldl
 - optparse-applicative >= 0.18.1.0
+- QuickCheck
+- hspec
 
 ghc-options:
 - -Wall
