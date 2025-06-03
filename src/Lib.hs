@@ -3,7 +3,9 @@ module Lib
  kMeans,
  sampleRGB,
  sampleMonochromatic,
- samplenRGB
+ samplenRGB,
+ sortRGB,
+ sortMonochrome
  ) where
 
 -- import required modules
@@ -20,12 +22,14 @@ data RGB = RGB Component Component Component
 
 -- Implementing show instance to print RGB on more common 0-255 scale
 instance Show RGB where
- show (RGB r g b) = let display = show . round . (*255) in
-                   "RGB " ++ display r ++ " " ++ display g ++ " " ++ display b 
+ show (RGB r g b) = let display = show . round . (*255) 
+                        colorcode = "\ESC[38;2;" ++ display r ++ ";" ++ display g ++ ";" ++ display b ++ "m" in -- format "\Esc[38;2;r;g;bm"
+                    colorcode ++ "RGB " ++ "\ESC[0m" ++ display r ++ " " ++ display g ++ " " ++ display b 
 
 -- implement toDouble function used to define instance of Num
 integerToDouble :: Integer -> Double
 integerToDouble = fromInteger
+
 
 -- Implementing RGB as an instance of Num
 instance Num RGB where
@@ -115,6 +119,40 @@ sampleMonochromatic hue g = do
                                           "Magenta" -> RGB val1 val2 val1
                                           "Cyan" -> RGB val2 val1 val1
                                           "Grey" -> RGB val1 val1 val1
+
+---- Color sorting ----
+-- map rgb to hsv for better sorting
+rgbToHueChroma :: RGB -> (Double, Double)
+rgbToHueChroma (RGB r b g) = let alpha = 0.5*(2.0*r-g-b)
+                                 beta = (sqrt 3.0 / 2) * (g-b) in
+                             (toHue alpha beta, toChroma alpha beta)
+                             where toHue = atan2
+                                   toChroma x y = sqrt $ x**2 + y**2
+
+-- using Y'_601 
+rgbToLuminosity :: RGB -> Double
+rgbToLuminosity (RGB r g b) = 0.299*r+0.587*g+0.114*b
+
+-- sort colors by hue, then chroma, then luminence
+sortRGB :: RGB -> RGB -> Ordering
+sortRGB rgb1 rgb2 | h1<h2 = LT
+                  | h1>h2 = GT
+                  | c1<c2 = LT
+                  | c1>c2 = LT
+                  | s1<=s2 = LT
+                  | otherwise = GT
+                    where (h1, c1) = rgbToHueChroma rgb1
+                          (h2, c2) = rgbToHueChroma rgb2
+                          s1 = rgbToLuminosity rgb1
+                          s2 = rgbToLuminosity rgb2
+
+-- sort monochrome colors by luminosity (yields more reasonable results)
+sortMonochrome :: RGB -> RGB -> Ordering
+sortMonochrome rgb1 rgb2 | s1 <= s2 = LT
+                         | otherwise = GT
+                         where s1 = rgbToLuminosity rgb1
+                               s2 = rgbToLuminosity rgb2
+
 
 -- randomly sample n colors using a given RGB sampler
 samplenRGB :: StatefulGen a m => Int -> (a -> m RGB) -> a -> m [RGB]
