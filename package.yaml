@@ -26,6 +26,8 @@ dependencies:
 - optparse-applicative >= 0.18.1.0
 - QuickCheck
 - hspec
+- JuicyPixels
+- vector 
 
 ghc-options:
 - -Wall
