@@ -8,7 +8,7 @@ import Lib
 
 pixelToRGB :: PixelRGB16 -> RGB
 pixelToRGB (PixelRGB16 r g b) = RGB (f r) (f g) (f b)
-                               where f x = toDouble x / 255.0
+                               where f x = toDouble x / 65535.0
                                      toDouble :: Pixel16 -> Double
                                      toDouble x = fromIntegral $ toInteger x
 
