@@ -3,14 +3,18 @@ module Main (main) where
 import Options.Applicative
 import System.Random.Stateful
 import Data.List
+import Data.Maybe
 import Lib
+import Img
 
 -- type for command line arguments
 data Options = Options {
     ncolors :: Int,
     monochromatic :: Bool,
     monoHue :: String,
-    seed :: Maybe Int
+    seed :: Maybe Int,
+    fromImage :: Bool,
+    filePath :: Maybe String
     }
 
 -- Reads monoHue option and throws error if unimplemented hue is provided
@@ -37,25 +41,47 @@ options = Options
     <*> optional (option auto
         (long "seed"
         <> help "Set a seed for random palette generation"))
+    <*> switch
+        (long "fromImage"
+        <> help "Should palette be generated from an image?")
+    <*> optional (strOption
+        (long "filePath"
+        <> help "filepath to read image from"))
+
+
+-- Generate palette from centroids in selected color space
+colorSpaceToCentroids :: Bool -> Int -> [RGB] -> IO ()
+colorSpaceToCentroids b n colorSpace = do
+    let initKmeans = take n colorSpace 
+    let out = kMeans initKmeans colorSpace
+    let newPalette = Prelude.map fst out
+    let sortedPalette = if b then sortBy sortMonochrome newPalette else sortBy sortRGB newPalette
+    putStrLn "Generated palette: "
+    print sortedPalette
+
 
 -- Main programme functionality, takes command line options as input
 optsToIO :: Options -> IO ()
-optsToIO (Options n b s usrSeed) = let sampler = if b then sampleMonochromatic s else sampleRGB in
-                                do
-                                 -- generate without seed if no seed is provided
-                                 randomGenerator <- case usrSeed of
-                                                     Just x -> return $ mkStdGen x
-                                                     Nothing -> getStdGen
-                                 -- generate random palette by kmeans clustering on randomly generated colors
-                                 let randomColors = runStateGen_ randomGenerator (samplenRGB 1000 sampler)
-                                 let initKmeans = runStateGen_ randomGenerator (samplenRGB n sampler)
-                                 let out = kMeans initKmeans randomColors
-                                 let newPalette = Prelude.map fst out
-                                 -- sort palette by luminosity if monochrome, else hue, chroma luminosity
-                                 let sortedPalette = if b then sortBy sortMonochrome newPalette else sortBy sortRGB newPalette
-                                 -- print generated palette as output
-                                 putStrLn "Generated palette: "
-                                 print sortedPalette 
+optsToIO (Options n b s usrSeed fi fp) = let sampler = if b then sampleMonochromatic s else sampleRGB in
+    do
+        -- generate without seed if no seed is provided
+        randomGenerator <- case usrSeed of
+            Just x -> return $ mkStdGen x
+            Nothing -> getStdGen
+        -- if fromImage, generate colorSpace from image filepath 
+        if fi
+        then case fp of
+             Just filepath -> do 
+                                print filepath
+                                readResult <- readImg filepath
+                                tryImgPalette readResult
+                                where tryImgPalette (Left msg) = print msg
+                                      tryImgPalette (Right img) = colorSpaceToCentroids b n (extractRGBlist img)
+             Nothing -> print "Invalid filepath"
+        -- else generate random palette on randomly generated colors
+        else let randomColors = runStateGen_ randomGenerator (samplenRGB n sampler) in 
+             colorSpaceToCentroids b n randomColors 
+                                    
 
 -- parse options and pass to optsToIO
 main :: IO ()
