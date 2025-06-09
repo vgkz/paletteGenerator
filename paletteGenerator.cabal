@@ -24,6 +24,7 @@ source-repository head
 
 library
   exposed-modules:
+      Img
       Lib
   other-modules:
       Paths_paletteGenerator
@@ -33,10 +34,14 @@ library
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      base >=4.7 && <5
+      JuicyPixels
+    , QuickCheck
+    , base >=4.7 && <5
     , foldl
+    , hspec
     , optparse-applicative >=0.18.1.0
     , random
+    , vector
   default-language: Haskell2010
 
 executable paletteGenerator-exe
@@ -49,11 +54,15 @@ executable paletteGenerator-exe
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      JuicyPixels
+    , QuickCheck
+    , base >=4.7 && <5
     , foldl
+    , hspec
     , optparse-applicative >=0.18.1.0
     , paletteGenerator
     , random
+    , vector
   default-language: Haskell2010
 
 test-suite paletteGenerator-test
@@ -67,9 +76,13 @@ test-suite paletteGenerator-test
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      JuicyPixels
+    , QuickCheck
+    , base >=4.7 && <5
     , foldl
+    , hspec
     , optparse-applicative >=0.18.1.0
     , paletteGenerator
     , random
+    , vector
   default-language: Haskell2010

@@ -1,5 +1,8 @@
 module Lib
 (
+ RGB (RGB),
+ euclideanDistance,
+ rgbMean,
  kMeans,
  sampleRGB,
  sampleMonochromatic,
