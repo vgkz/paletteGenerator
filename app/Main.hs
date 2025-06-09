@@ -73,14 +73,13 @@ optsToIO (Options n b s usrSeed fi fp) = let sampler = if b then sampleMonochrom
         if fi
         then case fp of
              Just filepath -> do 
-                                print filepath
                                 readResult <- readImg filepath
                                 tryImgPalette readResult
                                 where tryImgPalette (Left msg) = print msg
                                       tryImgPalette (Right img) = colorSpaceToCentroids b n (extractRGBlist img) randomGenerator
              Nothing -> print "Invalid filepath"
-        -- else generate random palette on randomly generated colors
-        else let randomColors = runStateGen_ randomGenerator (samplenRGB n sampler) in 
+        -- else generate random palette on randomly generated colors (1000 = size of colorspace)
+        else let randomColors = runStateGen_ randomGenerator (samplenRGB 1000 sampler) in 
              colorSpaceToCentroids b n randomColors randomGenerator 
                                     
 
