@@ -7,9 +7,6 @@ import Test.Hspec.QuickCheck
 instance Arbitrary RGB where
  arbitrary = RGB <$> choose (0.0,1.0) <*> choose (0.0,1.0) <*> choose (0.0,1.0)
 
-prop_eucdist :: RGB -> Property
-prop_eucdist rgb = euclideanDistance rgb rgb === 0.0
-
 main :: IO ()
 main = hspec $ do
     describe "Testing" $ do
@@ -19,5 +16,5 @@ main = hspec $ do
             rgbMean [RGB 0 0 0, RGB 0.5 0.5 0.5, RGB 1.0 1.0 1.0] `shouldBe` RGB 0.5 0.5 0.5
         prop "mean of repeated list of rgb should be itself" $
             \rgb -> rgbMean [rgb, rgb, rgb] `shouldBe` rgb
-            
-
+        prop "kmeans always produces k means" $
+            \(ks, xs) -> (not (null ks) && length ks < length xs) ==> length ks === length (map fst (kMeans ks xs)) 
