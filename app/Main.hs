@@ -51,11 +51,11 @@ options = Options
 
 -- Generate palette from centroids in selected color space
 colorSpaceToCentroids :: RandomGen g => Bool -> Int -> [RGB] -> g -> IO ()
-colorSpaceToCentroids b n colorSpace rg = do
+colorSpaceToCentroids b k colorSpace randGen = do
     -- randomly sample colorSpace for initial kMeans
-    let initKmeans = Prelude.map (colorSpace!!) (Prelude.take n $ randomRs (0, length colorSpace - 1) rg) 
-    let out = kMeans initKmeans colorSpace
-    let newPalette = Prelude.map fst out
+    let initKmeans = Prelude.map (colorSpace!!) (Prelude.take k $ randomRs (0, length colorSpace - 1) randGen)
+    let clusters = kMeans k colorSpace
+    let newPalette = getKMeansCentroids clusters 
     let sortedPalette = if b then sortBy sortMonochrome newPalette else sortBy sortRGB newPalette
     putStrLn "Generated palette: "
     print sortedPalette

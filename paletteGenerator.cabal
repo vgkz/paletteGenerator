@@ -39,6 +39,7 @@ library
     , base >=4.7 && <5
     , foldl
     , hspec
+    , kmeans
     , optparse-applicative >=0.18.1.0
     , random
     , vector
@@ -59,6 +60,7 @@ executable paletteGenerator-exe
     , base >=4.7 && <5
     , foldl
     , hspec
+    , kmeans
     , optparse-applicative >=0.18.1.0
     , paletteGenerator
     , random
@@ -81,6 +83,7 @@ test-suite paletteGenerator-test
     , base >=4.7 && <5
     , foldl
     , hspec
+    , kmeans
     , optparse-applicative >=0.18.1.0
     , paletteGenerator
     , random

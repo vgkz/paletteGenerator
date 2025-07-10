@@ -28,6 +28,7 @@ dependencies:
 - hspec
 - JuicyPixels
 - vector 
+- kmeans
 
 ghc-options:
 - -Wall
