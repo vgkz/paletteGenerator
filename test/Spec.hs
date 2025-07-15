@@ -10,11 +10,11 @@ instance Arbitrary RGB where
 main :: IO ()
 main = hspec $ do
     describe "Testing" $ do
-        prop "Distance to itself is 0" $
-            \rgb -> euclideanDistance rgb rgb `shouldBe` 0.0
         it "rgbMean should compute the mean" $ do
             rgbMean [RGB 0 0 0, RGB 0.5 0.5 0.5, RGB 1.0 1.0 1.0] `shouldBe` RGB 0.5 0.5 0.5
         prop "mean of repeated list of rgb should be itself" $
             \rgb -> rgbMean [rgb, rgb, rgb] `shouldBe` rgb
-        prop "kmeans always produces k means" $
-            \(ks, xs) -> (not (null ks) && length ks < length xs) ==> length ks === length (map fst (kMeans ks xs)) 
+        prop "kmeans always produces k means" $ do
+            xs <- listOf1 arbitrary
+            k <- chooseInt (1, max (length xs - 1) 1)
+            return $ k === length (getCentroids (kMeans k xs))

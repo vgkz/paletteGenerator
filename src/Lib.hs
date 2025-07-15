@@ -1,9 +1,9 @@
 module Lib
 (
  RGB (RGB),
- euclideanDistance,
  rgbMean,
  kMeans,
+ getCentroids,
  sampleRGB,
  sampleMonochromatic,
  samplenRGB,
@@ -15,6 +15,7 @@ module Lib
 import System.Random.Stateful
 import Control.Monad (replicateM)
 import Control.Foldl as Foldl 
+import Data.KMeans (kmeansGen)
 
 -- a component of RGB colors is a Double 0-1
 type Component = Double
@@ -61,49 +62,19 @@ instance UniformRange RGB where
 instance Uniform RGB where
  uniformM g = RGB <$> uniformRM (0,1) g <*> uniformRM (0,1) g <*> uniformRM (0,1) g
  
-
--- Euclidean distance
-euclideanDistance :: RGB -> RGB -> Double
-euclideanDistance x1 x2 = let (RGB r g b) = (x1 - x2)^2 in
-                          sqrt (r+g+b)
-
 -- mean, used to compute centroids in kmeans algorithm
 rgbMean :: [RGB] -> RGB
 rgbMean = Foldl.fold Foldl.mean 
 
--- assign x to nearest kmean
-assignCluster :: [RGB] -> RGB -> Maybe Int
-assignCluster kmeans x = let distances = Prelude.map (euclideanDistance x) kmeans 
-                             -- assign to closest centroid
-                             m = Prelude.minimum distances in
-                         -- get index of centroid
-                         getIndex m distances 0
-                         where getIndex :: Eq a => a -> [a] -> Int -> Maybe Int
-                               getIndex _ [] _ = Nothing
-                               getIndex m (d:ds) i = if m == d
-                                                     then Just i
-                                                     else getIndex m ds (i+1)
+kMeans :: Int -> [RGB] -> [[RGB]]
+kMeans k points = let centroids = kmeansGen f k points in
+                  -- kmeans algorithm may not generate k clusters. To guarantee k centroids, repeat algorithm on one less 
+                  -- point until k centroids is returned. Worst case it will iterate until the color space has k points. 
+                  if Prelude.length centroids == k then centroids else kMeans k (tail points)
+                  where f (RGB r g b) = [r, g, b]
 
--- compute an iteration of the naive kmeans algorithm
-kMeansIter :: [RGB] -> [RGB] -> [(RGB, [RGB])]
-kMeansIter ks xs = let out = Prelude.map (assigner ks) xs in
-                   -- return a list of each centroid and the colors assigned to that centroid
-                   Prelude.map (listConstructor out ks) (unique $ Prelude.map snd out)
-                   where assigner :: [RGB] -> RGB -> (RGB, Int)
-                         assigner kmeans x = case assignCluster kmeans x of
-                                             Just y -> (x, y)
-                                             Nothing -> (x, -1)
-                         listConstructor out kmeans i = (kmeans!!i, Prelude.map fst $ filter ((== i) . snd) out)
-                         unique [] = []
-                         unique (y:ys) = y:unique (filter (y /=) ys)
-
--- iterate until assignment does not change
-kMeans :: [RGB] -> [RGB] -> [(RGB, [RGB])]
-kMeans ks xs = let kmean_iter = kMeansIter ks xs
-                   newks = Prelude.map (rgbMean . snd) kmean_iter in
-               if ks == newks
-               then kmean_iter
-               else kMeans newks xs
+getCentroids :: [[RGB]] -> [RGB]
+getCentroids = Prelude.map rgbMean
 
 -- generate a random RGB color
 sampleRGB :: (StatefulGen g m) => g -> m RGB
