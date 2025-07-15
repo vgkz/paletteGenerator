@@ -67,7 +67,10 @@ rgbMean :: [RGB] -> RGB
 rgbMean = Foldl.fold Foldl.mean 
 
 kMeans :: Int -> [RGB] -> [[RGB]]
-kMeans k points = kmeansGen f k points
+kMeans k points = let centroids = kmeansGen f k points in
+                  -- kmeans algorithm may not generate k clusters. To guarantee k centroids, repeat algorithm on one less 
+                  -- point until k centroids is returned. Worst case it will iterate until the color space has k points. 
+                  if Prelude.length centroids == k then centroids else kMeans k (tail points)
                   where f (RGB r g b) = [r, g, b]
 
 getCentroids :: [[RGB]] -> [RGB]
