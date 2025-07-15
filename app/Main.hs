@@ -50,12 +50,10 @@ options = Options
 
 
 -- Generate palette from centroids in selected color space
-colorSpaceToCentroids :: RandomGen g => Bool -> Int -> [RGB] -> g -> IO ()
-colorSpaceToCentroids b n colorSpace rg = do
-    -- randomly sample colorSpace for initial kMeans
-    let initKmeans = Prelude.map (colorSpace!!) (Prelude.take n $ randomRs (0, length colorSpace - 1) rg) 
-    let out = kMeans initKmeans colorSpace
-    let newPalette = Prelude.map fst out
+colorSpaceToCentroids :: Bool -> Int -> [RGB] -> IO ()
+colorSpaceToCentroids b k colorSpace = do
+    let clusters = kMeans k colorSpace
+    let newPalette = getCentroids clusters 
     let sortedPalette = if b then sortBy sortMonochrome newPalette else sortBy sortRGB newPalette
     putStrLn "Generated palette: "
     print sortedPalette
@@ -76,11 +74,11 @@ optsToIO (Options n b s usrSeed fi fp) = let sampler = if b then sampleMonochrom
                                 readResult <- readImg filepath
                                 tryImgPalette readResult
                                 where tryImgPalette (Left msg) = print msg
-                                      tryImgPalette (Right img) = colorSpaceToCentroids b n (extractRGBlist img) randomGenerator
+                                      tryImgPalette (Right img) = colorSpaceToCentroids b n (extractRGBlist img) 
              Nothing -> print "Invalid filepath"
         -- else generate random palette on randomly generated colors (1000 = size of colorspace)
         else let randomColors = runStateGen_ randomGenerator (samplenRGB 1000 sampler) in 
-             colorSpaceToCentroids b n randomColors randomGenerator 
+             colorSpaceToCentroids b n randomColors 
                                     
 
 -- parse options and pass to optsToIO
